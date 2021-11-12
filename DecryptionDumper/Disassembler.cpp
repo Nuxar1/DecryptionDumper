@@ -1,5 +1,6 @@
 #include "Disassembler.h"
 #include "Debugger.h"
+#include <map>
 
 Disassembler::Disassembler(Debugger* dbg) : debugger(dbg)
 {
@@ -226,7 +227,7 @@ std::string Disassembler::AsmToCPP(ZydisDecodedInstruction instruction)
 			if (instruction.operands[1].mem.base != ZYDIS_REGISTER_RSP && instruction.operands[1].mem.base != ZYDIS_REGISTER_RBP)
 				ss << ZydisRegisterGetString(r1) << " *= " << "debugger->read<uintptr_t>(" << ZydisRegisterGetString(r2) << " + 0x" << std::hex << instruction.operands[1].mem.disp.value << ")";
 			else if (instruction.operands[1].mem.base == ZYDIS_REGISTER_RSP)
-				ss << "error: 3";//ss << ZydisRegisterGetString(r1) << " *= 0x" << std::hex << std::uppercase << debugger->read<uintptr_t>(c.Rsp + instruction.operands[1].mem.disp.value);
+				ss << "error: 3  (stack)";//ss << ZydisRegisterGetString(r1) << " *= 0x" << std::hex << std::uppercase << debugger->read<uintptr_t>(c.Rsp + instruction.operands[1].mem.disp.value);
 			else if (instruction.operands[1].mem.base == ZYDIS_REGISTER_RBP)
 				ss << "error: 4";//ss << ZydisRegisterGetString(r1) << " *= 0x" << std::hex << std::uppercase << debugger->read<uintptr_t>(c.Rbp + instruction.operands[1].mem.disp.value);
 			else
@@ -290,6 +291,8 @@ void Disassembler::Dump_ClientInfo()
 {
 	Print_PEB();
 	SkipOverUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
+	std::map<int, ZydisDecodedInstruction> rsp_stack_map;
+	std::map<int, ZydisDecodedInstruction> rbp_stack_map;
 	stack_trace = std::make_unique<ZydisDecodedInstruction[]>(0x1000);
 	uint32_t i = 0;
 
@@ -305,13 +308,24 @@ void Disassembler::Dump_ClientInfo()
 			debugger->exception_hit = false;
 		}
 		
+
 		char DisassembledString[256];
 		ZydisFormatterFormatInstruction(&formatter, &instruction, DisassembledString, sizeof(DisassembledString), 0);
-		printf("%30s  :   %s\n", DisassembledString, AsmToCPP(instruction).c_str());
+
+		printf("%30s  :   %50s", DisassembledString, AsmToCPP(instruction).c_str());
+		if (instruction.operands[0].mem.base == ZydisRegister::ZYDIS_REGISTER_RSP)
+			rsp_stack_map[instruction.operands[0].mem.disp.value] = instruction;
+		else if(instruction.operands[0].mem.base == ZydisRegister::ZYDIS_REGISTER_RBP)
+			rbp_stack_map[instruction.operands[0].mem.disp.value] = instruction;
+		else if (instruction.operands[1].mem.base == ZydisRegister::ZYDIS_REGISTER_RSP)
+			printf("  -- %50s", AsmToCPP(rsp_stack_map[instruction.operands[1].mem.disp.value]).c_str());
+		else if(instruction.operands[1].mem.base == ZydisRegister::ZYDIS_REGISTER_RBP)
+			printf("  -- %50s", AsmToCPP(rbp_stack_map[instruction.operands[1].mem.disp.value]).c_str());
+		printf("\n");
+
 
 		instruction = Decode(current_rip);
 		i++;
-		//translate to c code here and also do stack trace ... ugh
 	}
 }
 

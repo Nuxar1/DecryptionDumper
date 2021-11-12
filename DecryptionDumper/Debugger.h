@@ -28,7 +28,6 @@ private:
 
 	DebugStatus debug_status;
 	DebugFlag debug_flags;
-
 public:
 	uintptr_t base_address;
 	uint32_t process_id;
