@@ -78,13 +78,16 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>..\..\zydis-3.2.1\include;..\..\zydis-3.2.1\dependencies\zycore\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Nuxar\Documents\zydis\zycore\Release;C:\Users\Nuxar\Documents\zydis\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>include;$(IncludePath)</IncludePath>
+    <LibraryPath>..\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>..\..\zydis-3.2.1\include;..\..\zydis-3.2.1\dependencies\zycore\include;$(IncludePath)</IncludePath>
-    <LibraryPath>C:\Users\Nuxar\Documents\zydis\zycore\Release;C:\Users\Nuxar\Documents\zydis\Release;$(LibraryPath)</LibraryPath>
+    <IncludePath>..\include;$(IncludePath)</IncludePath>
+    <LibraryPath>C:\Users\Mats\source\repos\Nuxar1\DecryptionDumper;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <VcpkgUseStatic>true</VcpkgUseStatic>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -118,9 +121,9 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ZYCORE_STATIC_DEFINE;ZYDIS_STATIC_DEFINE;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -136,7 +139,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
