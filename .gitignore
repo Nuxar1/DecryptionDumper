@@ -361,3 +361,10 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/DecryptionDumper/r5apex.bin.i64
+/DecryptionDumper/r5apex.bin
+/DecryptionDumper/main/toc1.dcache
+/DecryptionDumper/main/toc0.dcache
+/DecryptionDumper/main/data1.dcache
+/DecryptionDumper/main/data0.dcache
+/DecryptionDumper/cod.bin
