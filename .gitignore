@@ -368,3 +368,9 @@ FodyWeavers.xsd
 /DecryptionDumper/main/data1.dcache
 /DecryptionDumper/main/data0.dcache
 /DecryptionDumper/cod.bin
+*.i64
+*.id0
+*.id1
+*.id2
+*.nam
+*.til

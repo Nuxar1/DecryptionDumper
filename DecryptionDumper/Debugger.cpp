@@ -61,6 +61,74 @@ bool Debugger::SetTrapFlag()
 	return SetContext(&c);
 }
 
+void Debugger::SetRegisterValue(ZydisRegister reg, uintptr_t val)
+{
+	CONTEXT c = GetContext();
+
+	if (ZydisRegisterGetWidth(ZYDIS_MACHINE_MODE_LONG_64, reg) == 32)
+	{
+		ZyanI16 regID = ZydisRegisterGetId(reg);
+		reg = ZydisRegisterEncode(ZYDIS_REGCLASS_GPR64, regID); //makes it the full register. (eg rax instead or eax)
+	}
+
+	switch (reg)
+	{
+	case ZYDIS_REGISTER_RIP:
+		c.Rip = val;
+		break;
+	case ZYDIS_REGISTER_RAX:
+		c.Rax = val;
+		break;
+	case ZYDIS_REGISTER_RCX:
+		c.Rcx = val;
+		break;
+	case ZYDIS_REGISTER_RDX:
+		c.Rdx = val;
+		break;
+	case ZYDIS_REGISTER_RBX:
+		c.Rbx = val;
+		break;
+	case ZYDIS_REGISTER_RSP:
+		c.Rsp = val;
+		break;
+	case ZYDIS_REGISTER_RBP:
+		c.Rbp = val;
+		break;
+	case ZYDIS_REGISTER_RSI:
+		c.Rsi = val;
+		break;
+	case ZYDIS_REGISTER_RDI:
+		c.Rdi = val;
+		break;
+	case ZYDIS_REGISTER_R8:
+		c.R8 = val;
+		break;
+	case ZYDIS_REGISTER_R9:
+		c.R9 = val;
+		break;
+	case ZYDIS_REGISTER_R10:
+		c.R10 = val;
+		break;
+	case ZYDIS_REGISTER_R11:
+		c.R11 = val;
+		break;
+	case ZYDIS_REGISTER_R12:
+		c.R12 = val;
+		break;
+	case ZYDIS_REGISTER_R13:
+		c.R13 = val;
+		break;
+	case ZYDIS_REGISTER_R14:
+		c.R14 = val;
+		break;
+	case ZYDIS_REGISTER_R15:
+		c.R15 = val;
+		break;
+	}
+
+	SetContext(&c);
+}
+
 uintptr_t Debugger::SingleStep()
 {
 	SetTrapFlag();

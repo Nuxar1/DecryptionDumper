@@ -152,13 +152,16 @@ std::vector<uintptr_t> PatternScanner::AOBScan(std::string str_pattern, bool bSi
 	return ret;
 }
 
-uintptr_t PatternScanner::Find_Pattern(std::string pattern, uintptr_t offset, uintptr_t base_offset, uintptr_t pre_base_offset, uint32_t rIndex)
+uintptr_t PatternScanner::Find_Pattern(std::string pattern, bool last, uint32_t rIndex, uintptr_t offset, uintptr_t base_offset, uintptr_t pre_base_offset)
 {
 	auto r = AOBScan(pattern);
 	if (!r.size())
 		return 0;
-
-	DWORD ret = r[rIndex] + pre_base_offset;
+	DWORD ret;
+	if (last)
+		ret = r[r.size() - 2] + pre_base_offset;
+	else
+		ret = r[rIndex] + pre_base_offset;
 	if (offset == 0) {
 		return ret + debugger->base_address + base_offset;
 	}

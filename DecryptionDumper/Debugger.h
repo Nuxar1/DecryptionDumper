@@ -50,6 +50,7 @@ public:
 	bool SetContext(CONTEXT* context);
 	bool SetRIP(uintptr_t address);
 	bool SetTrapFlag();
+	void SetRegisterValue(ZydisRegister reg, uintptr_t val);
 	uintptr_t SingleStep();
 	uintptr_t StepIn();
 	uintptr_t StepOver();

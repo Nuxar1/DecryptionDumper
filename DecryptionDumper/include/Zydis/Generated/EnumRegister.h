@@ -197,6 +197,15 @@ typedef enum ZydisRegister_
     ZYDIS_REGISTER_ZMM29,
     ZYDIS_REGISTER_ZMM30,
     ZYDIS_REGISTER_ZMM31,
+    // Matrix registers
+    ZYDIS_REGISTER_TMM0,
+    ZYDIS_REGISTER_TMM1,
+    ZYDIS_REGISTER_TMM2,
+    ZYDIS_REGISTER_TMM3,
+    ZYDIS_REGISTER_TMM4,
+    ZYDIS_REGISTER_TMM5,
+    ZYDIS_REGISTER_TMM6,
+    ZYDIS_REGISTER_TMM7,
     // Flags registers
     ZYDIS_REGISTER_FLAGS,
     ZYDIS_REGISTER_EFLAGS,
@@ -280,11 +289,12 @@ typedef enum ZydisRegister_
     ZYDIS_REGISTER_MXCSR,
     ZYDIS_REGISTER_PKRU,
     ZYDIS_REGISTER_XCR0,
+    ZYDIS_REGISTER_UIF,
 
     /**
      * Maximum value of this enum.
      */
-    ZYDIS_REGISTER_MAX_VALUE = ZYDIS_REGISTER_XCR0,
+    ZYDIS_REGISTER_MAX_VALUE = ZYDIS_REGISTER_UIF,
     /**
      * The minimum number of bits required to represent all values of this enum.
      */

@@ -16,6 +16,6 @@ private:
 	std::vector<uintptr_t> AOBScan(std::string str_pattern, bool bSingle = false);
 public:
 	PatternScanner(Debugger* dbg);
-	uintptr_t Find_Pattern(std::string pattern, uintptr_t offset = 0, uintptr_t base_offset = 0, uintptr_t pre_base_offset = 0, uint32_t rIndex = 0);
+	uintptr_t Find_Pattern(std::string pattern, bool last = false, uint32_t rIndex = 0, uintptr_t offset = 0, uintptr_t base_offset = 0, uintptr_t pre_base_offset = 0);
 };
 

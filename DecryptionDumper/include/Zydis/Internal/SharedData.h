@@ -75,6 +75,7 @@ typedef enum ZydisSemanticOperandType_
     ZYDIS_SEMANTIC_OPTYPE_XMM,
     ZYDIS_SEMANTIC_OPTYPE_YMM,
     ZYDIS_SEMANTIC_OPTYPE_ZMM,
+    ZYDIS_SEMANTIC_OPTYPE_TMM,
     ZYDIS_SEMANTIC_OPTYPE_BND,
     ZYDIS_SEMANTIC_OPTYPE_SREG,
     ZYDIS_SEMANTIC_OPTYPE_CR,
@@ -125,6 +126,7 @@ typedef enum ZydisInternalElementType_
     ZYDIS_IELEMENT_TYPE_UINT128,
     ZYDIS_IELEMENT_TYPE_UINT256,
     ZYDIS_IELEMENT_TYPE_FLOAT16,
+    ZYDIS_IELEMENT_TYPE_FLOAT16X2,
     ZYDIS_IELEMENT_TYPE_FLOAT32,
     ZYDIS_IELEMENT_TYPE_FLOAT64,
     ZYDIS_IELEMENT_TYPE_FLOAT80,
@@ -179,15 +181,15 @@ typedef enum ZydisImplicitMemBase_
     ZYDIS_IMPLMEM_BASE_AAX,
     ZYDIS_IMPLMEM_BASE_ADX,
     ZYDIS_IMPLMEM_BASE_ABX,
-    ZYDIS_IMPLMEM_BASE_ASP,
-    ZYDIS_IMPLMEM_BASE_ABP,
     ZYDIS_IMPLMEM_BASE_ASI,
     ZYDIS_IMPLMEM_BASE_ADI,
+    ZYDIS_IMPLMEM_BASE_SSP,
+    ZYDIS_IMPLMEM_BASE_SBP,
 
     /**
      * Maximum value of this enum.
      */
-    ZYDIS_IMPLMEM_BASE_MAX_VALUE = ZYDIS_IMPLMEM_BASE_ADI,
+    ZYDIS_IMPLMEM_BASE_MAX_VALUE = ZYDIS_IMPLMEM_BASE_SBP,
     /**
      * The minimum number of bits required to represent all values of this enum.
      */
@@ -235,6 +237,8 @@ typedef struct ZydisOperandDefinition_
             ZyanU8 base                    ZYAN_BITFIELD(ZYDIS_IMPLMEM_BASE_REQUIRED_BITS);
         } mem;
     } op;
+    ZyanBool is_multisource4               ZYAN_BITFIELD(1);
+    ZyanBool ignore_seg_override           ZYAN_BITFIELD(1);
 } ZydisOperandDefinition;
 
 /* ---------------------------------------------------------------------------------------------- */
@@ -435,11 +439,15 @@ typedef enum ZydisEVEXTupleType_
      * MOVDDUP
      */
     ZYDIS_TUPLETYPE_DUP,
+    /**
+     * Quarter of the vector-length.
+     */
+     ZYDIS_TUPLETYPE_QUARTER,
 
     /**
      * Maximum value of this enum.
      */
-    ZYDIS_TUPLETYPE_MAX_VALUE = ZYDIS_TUPLETYPE_DUP,
+    ZYDIS_TUPLETYPE_MAX_VALUE = ZYDIS_TUPLETYPE_QUARTER,
     /**
      * The minimum number of bits required to represent all values of this enum.
      */
@@ -725,6 +733,7 @@ ZYAN_STATIC_ASSERT(ZYDIS_RW_ACTION_REQUIRED_BITS       <=  8);
         ZyanU8 address_size_map                ZYAN_BITFIELD( 2); \
         ZyanU8 flags_reference                 ZYAN_BITFIELD( 7); \
         ZyanBool requires_protected_mode       ZYAN_BITFIELD( 1); \
+        ZyanBool no_compat_mode                ZYAN_BITFIELD( 1); \
         ZyanU8 category                        ZYAN_BITFIELD(ZYDIS_CATEGORY_REQUIRED_BITS); \
         ZyanU8 isa_set                         ZYAN_BITFIELD(ZYDIS_ISA_SET_REQUIRED_BITS); \
         ZyanU8 isa_ext                         ZYAN_BITFIELD(ZYDIS_ISA_EXT_REQUIRED_BITS); \
@@ -734,7 +743,8 @@ ZYAN_STATIC_ASSERT(ZYDIS_RW_ACTION_REQUIRED_BITS       <=  8);
         ZyanU8 constr_RM                       ZYAN_BITFIELD(ZYDIS_REG_CONSTRAINTS_REQUIRED_BITS); \
         ZyanU8 cpu_state                       ZYAN_BITFIELD(ZYDIS_RW_ACTION_REQUIRED_BITS); \
         ZyanU8 fpu_state                       ZYAN_BITFIELD(ZYDIS_RW_ACTION_REQUIRED_BITS); \
-        ZyanU8 xmm_state                       ZYAN_BITFIELD(ZYDIS_RW_ACTION_REQUIRED_BITS)
+        ZyanU8 xmm_state                       ZYAN_BITFIELD(ZYDIS_RW_ACTION_REQUIRED_BITS); \
+        ZyanBool accepts_segment               ZYAN_BITFIELD( 1)
 #else
 #   define ZYDIS_INSTRUCTION_DEFINITION_BASE \
         ZyanU16 mnemonic                       ZYAN_BITFIELD(ZYDIS_MNEMONIC_REQUIRED_BITS); \
@@ -751,7 +761,8 @@ ZYAN_STATIC_ASSERT(ZYDIS_RW_ACTION_REQUIRED_BITS       <=  8);
 
 #define ZYDIS_INSTRUCTION_DEFINITION_BASE_VECTOR_INTEL \
     ZYDIS_INSTRUCTION_DEFINITION_BASE_VECTOR; \
-    ZyanBool is_gather                     ZYAN_BITFIELD( 1)
+    ZyanBool is_gather                     ZYAN_BITFIELD( 1); \
+    ZyanBool no_source_dest_match          ZYAN_BITFIELD( 1)
 
 /**
  * Defines the `ZydisInstructionDefinition` struct.
@@ -778,9 +789,9 @@ typedef struct ZydisInstructionDefinitionLEGACY_
     ZyanBool accepts_BOUND                 ZYAN_BITFIELD( 1);
     ZyanBool accepts_XACQUIRE              ZYAN_BITFIELD( 1);
     ZyanBool accepts_XRELEASE              ZYAN_BITFIELD( 1);
+    ZyanBool accepts_NOTRACK               ZYAN_BITFIELD( 1);
     ZyanBool accepts_hle_without_lock      ZYAN_BITFIELD( 1);
     ZyanBool accepts_branch_hints          ZYAN_BITFIELD( 1);
-    ZyanBool accepts_segment               ZYAN_BITFIELD( 1);
 #endif
 } ZydisInstructionDefinitionLEGACY;
 
@@ -878,6 +889,10 @@ typedef struct ZydisInstructionDefinitionMVEX_
 typedef struct ZydisAccessedFlags_
 {
     ZydisCPUFlagAction action[ZYDIS_CPUFLAG_MAX_VALUE + 1];
+    ZyanU32 cpu_flags_read      ZYAN_BITFIELD(22);
+    ZyanU32 cpu_flags_written   ZYAN_BITFIELD(22);
+    ZyanU8 fpu_flags_read       ZYAN_BITFIELD( 4);
+    ZyanU8 fpu_flags_written    ZYAN_BITFIELD( 4);
 } ZydisAccessedFlags;
 
 /* ---------------------------------------------------------------------------------------------- */
