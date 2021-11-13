@@ -520,6 +520,7 @@ void Disassembler::Dump_ClientInfo(uintptr_t address)
 	SkipOverUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
 	ZydisDecodedInstruction encrypted_read_instruction = Decode(current_rip);
 	printf("\t%s;\n", AsmToCPP(encrypted_read_instruction, current_rip).c_str());
+	printf("\tif(!%s)\n\t\treturn &s;\n!", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
 
 	Print_PEB();
 	SkipOverUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
@@ -538,6 +539,7 @@ void Disassembler::Dump_ClientBase(uintptr_t address)
 	ZydisDecodedInstruction encrypted_read_instruction = Decode(current_rip);
 	std::string enc_client_info = AsmToCPP(encrypted_read_instruction, current_rip);
 	printf("\t%s;\n", std::regex_replace(enc_client_info, std::regex("rbx"), "client_info").c_str());
+	printf("\tif(!%s)\n\t\treturn &s;\n!", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
 
 	Print_PEB();
 	SkipOverUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
@@ -581,8 +583,8 @@ void Disassembler::Dump_BoneIndex(uintptr_t address)
 
 	SkipOverUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
 	ZydisDecodedInstruction instruction = Decode(current_rip);
-	std::string enc_client_info = AsmToCPP(instruction, current_rip);
-	printf("\t%s;\n", std::regex_replace(enc_client_info, std::regex("rdi"), "bone_index").c_str());
+	printf("\t%s = bone_index;\n", Get64BitRegisterString(instruction.operands[1].reg.value).c_str());
+	printf("\t%s;\n", AsmToCPP(instruction, current_rip).c_str());
 
 	current_rip = debugger->SingleStep();
 	if (debugger->exception_hit) {
@@ -605,6 +607,7 @@ void Disassembler::Dump_BoneBase(uintptr_t address)
 	SkipOverUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
 	ZydisDecodedInstruction encrypted_read_instruction = Decode(current_rip);
 	printf("\t%s;\n", AsmToCPP(encrypted_read_instruction, current_rip).c_str());
+	printf("\tif(!%s)\n\t\treturn &s;\n!", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
 
 	Print_PEB();
 	SkipOverUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
