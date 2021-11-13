@@ -64,7 +64,9 @@ void Disassembler::GetModifiedRegisters(ZydisDecodedInstruction instruction, Zyd
 {
 	for (uint32_t i = 0; i < instruction.operand_count; i++)
 	{
-		if (instruction.operands[i].visibility == ZydisOperandVisibility::ZYDIS_OPERAND_VISIBILITY_EXPLICIT || instruction.mnemonic == ZydisMnemonic::ZYDIS_MNEMONIC_AND) { //ZydisMnemonic::ZYDIS_MNEMONIC_AND -> operand 0 is implicit ... for whatever reason..
+		if (instruction.operands[i].visibility == ZydisOperandVisibility::ZYDIS_OPERAND_VISIBILITY_EXPLICIT
+			|| instruction.mnemonic == ZydisMnemonic::ZYDIS_MNEMONIC_AND
+			|| instruction.mnemonic == ZydisMnemonic::ZYDIS_MNEMONIC_MUL) { //ZydisMnemonic::ZYDIS_MNEMONIC_AND or ZYDIS_MNEMONIC_MUL-> operand 0 is implicit ... for whatever reason..
 			if (instruction.operands[i].type == ZydisOperandType::ZYDIS_OPERAND_TYPE_REGISTER) {
 				if (instruction.operands[i].actions & ZydisOperandAction::ZYDIS_OPERAND_ACTION_WRITE)
 					reg[i] = To64BitRegister(instruction.operands[i].reg.value);
@@ -81,7 +83,9 @@ void Disassembler::GetAccessedRegisters(ZydisDecodedInstruction instruction, Zyd
 {
 	for (uint32_t i = 0; i < instruction.operand_count; i++)
 	{
-		if (instruction.operands[i].visibility == ZydisOperandVisibility::ZYDIS_OPERAND_VISIBILITY_EXPLICIT || instruction.mnemonic == ZydisMnemonic::ZYDIS_MNEMONIC_AND) { //ZydisMnemonic::ZYDIS_MNEMONIC_AND -> operand 0 is implicit ... for whatever reason..
+		if (instruction.operands[i].visibility == ZydisOperandVisibility::ZYDIS_OPERAND_VISIBILITY_EXPLICIT
+			|| instruction.mnemonic == ZydisMnemonic::ZYDIS_MNEMONIC_AND
+			|| instruction.mnemonic == ZydisMnemonic::ZYDIS_MNEMONIC_MUL) { //ZydisMnemonic::ZYDIS_MNEMONIC_AND or ZYDIS_MNEMONIC_MUL-> operand 0 is implicit ... for whatever reason..
 			if (instruction.operands[i].type == ZydisOperandType::ZYDIS_OPERAND_TYPE_REGISTER) {
 				if (instruction.operands[i].actions & ZydisOperandAction::ZYDIS_OPERAND_ACTION_READ)
 					reg[i] = To64BitRegister(instruction.operands[i].reg.value);
@@ -356,7 +360,7 @@ void Disassembler::AddRequiredInstruction(std::vector<InstructionTrace>& instruc
 #ifdef DEBUG
 	char DisassembledString[256];
 	ZydisFormatterFormatInstruction(&formatter, &(trace->instruction), DisassembledString, sizeof(DisassembledString), 0);
-	printf("current line %d: %s\n", trace - instruction_trace.begin(), DisassembledString);
+	printf("needed line %d: %s\n", trace - instruction_trace.begin(), DisassembledString);
 #endif
 	ZydisRegister accessed[8] = { ZydisRegister::ZYDIS_REGISTER_NONE };
 	GetAccessedRegisters(trace->instruction, accessed);
@@ -398,6 +402,11 @@ void Disassembler::Dump_Decryption(ZydisMnemonic end_mnemonic, ZydisRegister enc
 
 			instruction_trace[i] = { instruction, last_modified, rsp_stack_map, rbp_stack_map, current_rip };
 
+#ifdef DEBUG
+			char DisassembledString[256];
+			ZydisFormatterFormatInstruction(&formatter, &instruction, DisassembledString, sizeof(DisassembledString), 0);
+			printf("read line %d: %s\n", i, DisassembledString);
+#endif
 			ZydisRegister modified[8] = { ZydisRegister::ZYDIS_REGISTER_NONE };
 			ZydisRegister accessed[8] = { ZydisRegister::ZYDIS_REGISTER_NONE };
 			GetModifiedRegisters(instruction, modified);
