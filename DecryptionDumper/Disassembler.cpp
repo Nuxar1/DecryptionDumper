@@ -65,6 +65,7 @@ void Disassembler::GetModifiedRegisters(ZydisDecodedInstruction instruction, Zyd
 	for (uint32_t i = 0; i < instruction.operand_count; i++)
 	{
 		if (instruction.operands[i].visibility == ZydisOperandVisibility::ZYDIS_OPERAND_VISIBILITY_EXPLICIT
+			|| To64BitRegister(instruction.operands[i].reg.value) == ZydisRegister::ZYDIS_REGISTER_RAX //RAX is implicit? idk lol
 			|| instruction.mnemonic == ZydisMnemonic::ZYDIS_MNEMONIC_AND
 			|| instruction.mnemonic == ZydisMnemonic::ZYDIS_MNEMONIC_MUL) { //ZydisMnemonic::ZYDIS_MNEMONIC_AND or ZYDIS_MNEMONIC_MUL-> operand 0 is implicit ... for whatever reason..
 			if (instruction.operands[i].type == ZydisOperandType::ZYDIS_OPERAND_TYPE_REGISTER) {
@@ -84,6 +85,7 @@ void Disassembler::GetAccessedRegisters(ZydisDecodedInstruction instruction, Zyd
 	for (uint32_t i = 0; i < instruction.operand_count; i++)
 	{
 		if (instruction.operands[i].visibility == ZydisOperandVisibility::ZYDIS_OPERAND_VISIBILITY_EXPLICIT
+			|| To64BitRegister(instruction.operands[i].reg.value) == ZydisRegister::ZYDIS_REGISTER_RAX //RAX is implicit? idk lol
 			|| instruction.mnemonic == ZydisMnemonic::ZYDIS_MNEMONIC_AND
 			|| instruction.mnemonic == ZydisMnemonic::ZYDIS_MNEMONIC_MUL) { //ZydisMnemonic::ZYDIS_MNEMONIC_AND or ZYDIS_MNEMONIC_MUL-> operand 0 is implicit ... for whatever reason..
 			if (instruction.operands[i].type == ZydisOperandType::ZYDIS_OPERAND_TYPE_REGISTER) {
