@@ -663,7 +663,7 @@ void Disassembler::Dump_BoneBase(uintptr_t address)
 	SkipOverUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
 	ZydisDecodedInstruction encrypted_read_instruction = Decode(current_rip);
 	printf("\t%s;\n", AsmToCPP(encrypted_read_instruction, current_rip).c_str());
-	printf("\tif(!%s)\n\t\treturn %s;\n!", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str(), Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
+	printf("\tif(!%s)\n\t\treturn %s;\n", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str(), Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
 
 	Print_PEB();
 	SkipOverUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
