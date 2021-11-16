@@ -14,6 +14,7 @@ struct InstructionTrace {
 	std::map<int, uint32_t> rsp_stack_map; //uint32_t is the index in the instructin_trace list.
 	std::map<int, uint32_t> rbp_stack_map; //uint32_t is the index in the instructin_trace list.
 	uintptr_t rip;
+	bool used;
 };
 
 class Disassembler
@@ -27,19 +28,21 @@ private:
 private:
 	ZydisRegister To64BitRegister(ZydisRegister reg) const;
 	std::string Get64BitRegisterString(ZydisRegister reg) const;
-	void GetModifiedRegisters(ZydisDecodedInstruction instruction, ZydisRegister reg[4]) const;
-	void GetAccessedRegisters(ZydisDecodedInstruction instruction, ZydisRegister reg[4]) const;
-	void AddRequiredInstruction(std::vector<InstructionTrace>& instruction_trace, std::vector<InstructionTrace>::iterator trace, std::vector<bool>& used_instructions) const;
+	void GetModifiedRegisters(ZydisDecodedInstruction instruction, ZydisRegister reg[8]) const;
+	void GetAccessedRegisters(ZydisDecodedInstruction instruction, ZydisRegister reg[8]) const;
+	void AddRequiredInstruction(std::vector<InstructionTrace>& instruction_trace, std::vector<InstructionTrace>::iterator trace) const;
 	ZydisDecodedInstruction Decode(uintptr_t rip);
 	void SkipOverUntilInstruction(ZydisMnemonic instruction);
 	void SkipUntilInstruction(ZydisMnemonic mnemonic);
-	std::string AsmToCPP(ZydisDecodedInstruction instruction, uintptr_t rip) const;
-	void Print_PEB();
+	std::string AsmToCPP(ZydisDecodedInstruction instruction, uintptr_t rip, const char* stack_trace_name = 0) const;
+	std::string GetInstructionText(ZydisDecodedInstruction& instruction) const;
+	bool Print_PEB();
 	void Dump_Decryption(ZydisMnemonic end_mnemonic, ZydisRegister enc_reg, const char* print_indexing);
 public:
 	Disassembler(Debugger* dbg);
 
-	void Dump_ClientInfo(uintptr_t address);
+	void Dump_ClientInfo_MW(uintptr_t address);
+	void Dump_ClientInfo_Vanguard(uintptr_t address);
 	void Dump_ClientBase(uintptr_t address);
 	void Dump_BoneIndex(uintptr_t address);
 	void Dump_BoneBase(uintptr_t address);

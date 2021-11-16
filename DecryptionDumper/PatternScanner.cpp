@@ -108,7 +108,7 @@ uintptr_t PatternScanner::Find_Pattern(const char* pattern, bool last, uint32_t 
 
 		uintptr_t ret;
 		if (last)
-			ret = r[r.size() - 2] + pre_base_offset;
+			ret = r[r.size() - 1] + pre_base_offset;
 		else
 			ret = r[rIndex] + pre_base_offset;
 
