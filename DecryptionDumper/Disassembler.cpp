@@ -411,7 +411,7 @@ void Disassembler::AddRequiredInstruction(std::vector<InstructionTrace>& instruc
 	}
 }
 
-void Disassembler::Dump_Decryption(ZydisMnemonic end_mnemonic, ZydisRegister enc_reg, const char* print_indexing)
+void Disassembler::Dump_Decryption(uintptr_t decryption_end, ZydisRegister enc_reg, const char* print_indexing, ZydisMnemonic end_mnemonic)
 {
 	std::vector<InstructionTrace> instruction_trace(0x200);
 
@@ -422,7 +422,7 @@ void Disassembler::Dump_Decryption(ZydisMnemonic end_mnemonic, ZydisRegister enc
 
 	{
 		ZydisDecodedInstruction instruction = Decode(current_rip);
-		while (instruction.mnemonic != end_mnemonic)
+		while (current_rip != decryption_end && (end_mnemonic == ZydisMnemonic::ZYDIS_MNEMONIC_INVALID || instruction.mnemonic != end_mnemonic))
 		{
 			if (i >= 0x200)break;
 
@@ -502,13 +502,24 @@ void Disassembler::Dump_Decryption(ZydisMnemonic end_mnemonic, ZydisRegister enc
 			std::string DisassembledString = GetInstructionText(instruction_trace[j].instruction);
 
 			if (instruction_trace[j].instruction.operands[1].mem.base == ZydisRegister::ZYDIS_REGISTER_RSP && instruction_trace[j].instruction.mnemonic != ZydisMnemonic::ZYDIS_MNEMONIC_PUSHFQ) {
-				try
-				{
-					std::string trace_code = AsmToCPP(instruction_trace[instruction_trace[j].rsp_stack_map.at(instruction_trace[j].instruction.operands[1].mem.disp.value)].instruction, instruction_trace[j].rip);
-					std::string TraceDisassembledString = GetInstructionText(instruction_trace[instruction_trace[j].rsp_stack_map.at(instruction_trace[j].instruction.operands[1].mem.disp.value)].instruction);
+				try {
+					auto stack_instruction = instruction_trace[instruction_trace[j].rsp_stack_map.at(instruction_trace[j].instruction.operands[1].mem.disp.value)].instruction;
+
+					char tmp_var[100] = "RSP_";
+					sprintf_s(tmp_var + strlen(tmp_var), 100 - strlen(tmp_var), "%#x", instruction_trace[j].instruction.operands[1].mem.disp.value);
+					printf("%suintptr_t %s;\n", print_indexing, tmp_var);
+
+					std::string trace_code = AsmToCPP(stack_instruction, instruction_trace[j].rip);
+					std::string TraceDisassembledString = GetInstructionText(stack_instruction);
+					trace_code = std::regex_replace(trace_code, std::regex(Get64BitRegisterString(stack_instruction.operands[0].reg.value)), tmp_var);
 					if (trace_code.size() > 1)
-						printf("\t\t%s; \t\t//%s : %RSP_%X\n", trace_code.c_str(), TraceDisassembledString.c_str(), instruction_trace[j].instruction.operands[1].mem.disp.value);
-					instruction_trace[j].instruction.operands[1] = instruction_trace[instruction_trace[j].rsp_stack_map.at(instruction_trace[j].instruction.operands[1].mem.disp.value)].instruction.operands[0];
+						printf("\033[1;34m\t\t%s; \t\t//%s : %RSP+%#X\n\033[0m", trace_code.c_str(), TraceDisassembledString.c_str(), instruction_trace[j].instruction.operands[1].mem.disp.value);
+					instruction_trace[j].instruction.operands[1] = stack_instruction.operands[0];
+
+					std::string cpp_code = AsmToCPP(instruction_trace[j].instruction, instruction_trace[j].rip).c_str();
+					cpp_code = cpp_code.replace(cpp_code.find("=") + 2, cpp_code.size(), tmp_var);
+					if (cpp_code.size() > 1)
+						printf("%s%s; \t\t//%s\n", print_indexing, cpp_code.c_str(), DisassembledString.c_str());
 				}
 				catch (const std::exception&) { // didn't find stack trace. use base;
 					printf("%s%s = baseModuleAddr; \t\t//%s -- didn't find trace -> use base\n", print_indexing, Get64BitRegisterString(instruction_trace[j].instruction.operands[0].reg.value).c_str(), DisassembledString.c_str());
@@ -517,21 +528,35 @@ void Disassembler::Dump_Decryption(ZydisMnemonic end_mnemonic, ZydisRegister enc
 			}
 			else if (instruction_trace[j].instruction.operands[1].mem.base == ZydisRegister::ZYDIS_REGISTER_RBP && instruction_trace[j].instruction.mnemonic != ZydisMnemonic::ZYDIS_MNEMONIC_PUSHFQ) {
 				try {
-					std::string trace_code = AsmToCPP(instruction_trace[instruction_trace[j].rbp_stack_map.at(instruction_trace[j].instruction.operands[1].mem.disp.value)].instruction, instruction_trace[j].rip);
-					std::string TraceDisassembledString = GetInstructionText(instruction_trace[instruction_trace[j].rbp_stack_map.at(instruction_trace[j].instruction.operands[1].mem.disp.value)].instruction);
+					auto stack_instruction = instruction_trace[instruction_trace[j].rbp_stack_map.at(instruction_trace[j].instruction.operands[1].mem.disp.value)].instruction;
+
+					char tmp_var[100] = "RBP_";
+					sprintf_s(tmp_var + strlen(tmp_var), 100 - strlen(tmp_var), "%#x", instruction_trace[j].instruction.operands[1].mem.disp.value);
+					printf("%suintptr_t %s;\n", print_indexing, tmp_var);
+
+					std::string trace_code = AsmToCPP(stack_instruction, instruction_trace[j].rip);
+					std::string TraceDisassembledString = GetInstructionText(stack_instruction);
+					trace_code = std::regex_replace(trace_code, std::regex(Get64BitRegisterString(stack_instruction.operands[0].reg.value)), tmp_var);
 					if (trace_code.size() > 1)
-						printf("\t\t%s; \t\t//%s : %RSP_%X\n", trace_code.c_str(), TraceDisassembledString.c_str(), instruction_trace[j].instruction.operands[1].mem.disp.value);
-					instruction_trace[j].instruction.operands[1] = instruction_trace[instruction_trace[j].rbp_stack_map.at(instruction_trace[j].instruction.operands[1].mem.disp.value)].instruction.operands[0];
+						printf("\033[1;34m\t\t%s; \t\t//%s : %RBP+%#X\n\033[0m", trace_code.c_str(), TraceDisassembledString.c_str(), instruction_trace[j].instruction.operands[1].mem.disp.value);
+					instruction_trace[j].instruction.operands[1] = stack_instruction.operands[0];
+
+					std::string cpp_code = AsmToCPP(instruction_trace[j].instruction, instruction_trace[j].rip).c_str();
+					cpp_code = cpp_code.replace(cpp_code.find("=") + 2, cpp_code.size(), tmp_var);
+					if (cpp_code.size() > 1)
+						printf("%s%s; \t\t//%s\n", print_indexing, cpp_code.c_str(), DisassembledString.c_str());
 				}
-				catch (const std::exception&) { // didn't find stack trace. use base
-					printf("%s%s = baseModuleAddr; \t\t//%s -- didn't find trace -> use base\n", print_indexing, Get64BitRegisterString(instruction_trace[j].instruction.operands[0].reg.value), DisassembledString.c_str());
+				catch (const std::exception&) { // didn't find stack trace. use base;
+					printf("%s%s = baseModuleAddr; \t\t//%s -- didn't find trace -> use base\n", print_indexing, Get64BitRegisterString(instruction_trace[j].instruction.operands[0].reg.value).c_str(), DisassembledString.c_str());
 					continue;
 				}
 			}
-			std::string cpp_code = AsmToCPP(instruction_trace[j].instruction, instruction_trace[j].rip).c_str();
+			else {
+				std::string cpp_code = AsmToCPP(instruction_trace[j].instruction, instruction_trace[j].rip).c_str();
 
-			if (cpp_code.size() > 1)
-				printf("%s%s; \t\t//%s\n", print_indexing, cpp_code.c_str(), DisassembledString.c_str());
+				if (cpp_code.size() > 1)
+					printf("%s%s; \t\t//%s\n", print_indexing, cpp_code.c_str(), DisassembledString.c_str());
+			}
 		}
 	}
 }
@@ -549,16 +574,21 @@ void Disassembler::Dump_ClientInfo_MW(uintptr_t address)
 	printf("\tuint64_t rax = 0, rbx = 0, rcx = 0, rdx = 0, rdi = 0, rsi = 0, r8 = 0, r9 = 0, r10 = 0, r11 = 0, r12 = 0, r13 = 0, r14 = 0, r15 = 0;\n");
 
 	SkipOverUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
+
 	ZydisDecodedInstruction encrypted_read_instruction = Decode(current_rip);
 	printf("\t%s;\n", AsmToCPP(encrypted_read_instruction, current_rip).c_str());
-	printf("\tif(!%s)\n\t\treturn %s;\n!", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str(), Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
+	printf("\tif(!%s)\n\t\treturn %s;\n", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str(), Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
 
 	if (!Print_PEB()) {
 		printf("\t//Failed to find peb. exiting\n}\n");
 		return;
 	}
+	SkipUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
+	ZydisDecodedInstruction jmp_to_end = Decode(current_rip);
+	uintptr_t decryption_end = jmp_to_end.operands[0].imm.value.u + current_rip + jmp_to_end.length;
 	SkipOverUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
-	Dump_Decryption(ZydisMnemonic::ZYDIS_MNEMONIC_CALL, encrypted_read_instruction.operands[0].reg.value, "\t");
+
+	Dump_Decryption(decryption_end, encrypted_read_instruction.operands[0].reg.value, "\t");
 	printf("\treturn %s;\n}\n", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
 }
 
@@ -574,13 +604,17 @@ void Disassembler::Dump_ClientInfo_Vanguard(uintptr_t address)
 	printf("uintptr_t decrypt_client_info()\n{\n");
 	printf("\tuint64_t rax = baseModuleAddr, rbx = baseModuleAddr, rcx = baseModuleAddr, rdx = baseModuleAddr, rdi = baseModuleAddr, rsi = baseModuleAddr, r8 = baseModuleAddr, r9 = baseModuleAddr, r1baseModuleAddr = baseModuleAddr, r11 = baseModuleAddr, r12 = baseModuleAddr, r13 = baseModuleAddr, r14 = baseModuleAddr, r15 = baseModuleAddr;\n");
 
+	SkipUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
+	ZydisDecodedInstruction jmp_to_end = Decode(current_rip);
+	uintptr_t decryption_end = jmp_to_end.operands[0].imm.value.u + current_rip + jmp_to_end.length;
 	SkipOverUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
+
 	ZydisDecodedInstruction encrypted_read_instruction = Decode(current_rip);
 	printf("\t%s;\n", AsmToCPP(encrypted_read_instruction, current_rip).c_str());
 	printf("\tif(!%s)\n\t\treturn %s;\n", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str(), Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
 
 	SkipOverUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
-	Dump_Decryption(ZydisMnemonic::ZYDIS_MNEMONIC_CALL, encrypted_read_instruction.operands[0].reg.value, "\t");
+	Dump_Decryption(decryption_end, encrypted_read_instruction.operands[0].reg.value, "\t");
 	printf("\treturn %s;\n}\n", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
 }
 
@@ -598,8 +632,13 @@ void Disassembler::Dump_ClientBase(uintptr_t address)
 	printf("\tif(!%s)\n\t\treturn %s;\n", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str(), Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
 
 	Print_PEB();
+
+	SkipUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
+	ZydisDecodedInstruction jmp_to_end = Decode(current_rip);
+	uintptr_t decryption_end = jmp_to_end.operands[0].imm.value.u + current_rip + jmp_to_end.length;
 	SkipOverUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
-	Dump_Decryption(ZydisMnemonic::ZYDIS_MNEMONIC_AND, ZydisRegister::ZYDIS_REGISTER_MAX_VALUE, "\t");
+
+	Dump_Decryption(0, ZydisRegister::ZYDIS_REGISTER_MAX_VALUE, "\t", ZydisMnemonic::ZYDIS_MNEMONIC_AND);
 
 	SkipUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_CMP);
 	ZydisRegister switch_register = To64BitRegister(Decode(current_rip).operands[0].reg.value);
@@ -617,7 +656,7 @@ void Disassembler::Dump_ClientBase(uintptr_t address)
 		debugger->SetRegisterValue(switch_register, i);
 		debugger->SetRegisterValue(base_register, debugger->base_address);
 
-		Dump_Decryption(ZydisMnemonic::ZYDIS_MNEMONIC_MOVSXD, encrypted_read_instruction.operands[0].reg.value, "\t\t");
+		Dump_Decryption(decryption_end, encrypted_read_instruction.operands[0].reg.value, "\t\t");
 
 		printf("\t\treturn %s;\n\t}\n", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
 	}
@@ -637,7 +676,11 @@ void Disassembler::Dump_BoneIndex(uintptr_t address)
 	ZydisRegister return_register = Decode(current_rip).operands[0].reg.value;
 	current_rip = address;
 
+	SkipUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
+	ZydisDecodedInstruction jmp_to_end = Decode(current_rip);
+	uintptr_t decryption_end = jmp_to_end.operands[0].imm.value.u + current_rip + jmp_to_end.length;
 	SkipOverUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
+
 	ZydisDecodedInstruction instruction = Decode(current_rip);
 	printf("\t%s = bone_index;\n", Get64BitRegisterString(instruction.operands[1].reg.value).c_str());
 	printf("\t%s;\n", AsmToCPP(instruction, current_rip).c_str());
@@ -648,7 +691,7 @@ void Disassembler::Dump_BoneIndex(uintptr_t address)
 		debugger->SetRIP(current_rip);
 		debugger->exception_hit = false;
 	}
-	Dump_Decryption(ZydisMnemonic::ZYDIS_MNEMONIC_TEST, return_register, "\t");
+	Dump_Decryption(decryption_end, return_register, "\t");
 	printf("\treturn %s;\n}", Get64BitRegisterString(return_register).c_str());
 }
 
@@ -666,8 +709,13 @@ void Disassembler::Dump_BoneBase(uintptr_t address)
 	printf("\tif(!%s)\n\t\treturn %s;\n", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str(), Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
 
 	Print_PEB();
+
+	SkipUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
+	ZydisDecodedInstruction jmp_to_end = Decode(current_rip);
+	uintptr_t decryption_end = jmp_to_end.operands[0].imm.value.u + current_rip + jmp_to_end.length;
 	SkipOverUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
-	Dump_Decryption(ZydisMnemonic::ZYDIS_MNEMONIC_AND, ZydisRegister::ZYDIS_REGISTER_MAX_VALUE, "\t");
+
+	Dump_Decryption(0, ZydisRegister::ZYDIS_REGISTER_MAX_VALUE, "\t", ZydisMnemonic::ZYDIS_MNEMONIC_AND);
 
 	SkipUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_CMP);
 	ZydisRegister switch_register = To64BitRegister(Decode(current_rip).operands[0].reg.value);
@@ -685,7 +733,7 @@ void Disassembler::Dump_BoneBase(uintptr_t address)
 		debugger->SetRegisterValue(switch_register, i);
 		debugger->SetRegisterValue(base_register, debugger->base_address);
 
-		Dump_Decryption(ZydisMnemonic::ZYDIS_MNEMONIC_TEST, encrypted_read_instruction.operands[0].reg.value, "\t\t");
+		Dump_Decryption(decryption_end, encrypted_read_instruction.operands[0].reg.value, "\t\t");
 
 		printf("\t\treturn %s;\n\t}\n", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
 	}

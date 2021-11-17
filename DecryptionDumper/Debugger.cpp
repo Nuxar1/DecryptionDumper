@@ -259,7 +259,7 @@ bool Debugger::OnExceptionEvent(const EXCEPTION_DEBUG_INFO* pInfo)
 bool Debugger::Init(std::string exe_path)
 {
 	Load_File(exe_path);
-	Sleep(6000);
+	Sleep(5500);
 	if (!DebugActiveProcess(process_id))
 	{
 		printf("Failed to attach to process. Error code: %#X", GetLastError());

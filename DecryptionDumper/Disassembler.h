@@ -3,6 +3,7 @@
 #include <string>
 #include <sstream>
 #include <map>
+#include <regex>
 #include <vector>
 #include <Zydis/Zydis.h>
 
@@ -37,7 +38,7 @@ private:
 	std::string AsmToCPP(ZydisDecodedInstruction instruction, uintptr_t rip, const char* stack_trace_name = 0) const;
 	std::string GetInstructionText(ZydisDecodedInstruction& instruction) const;
 	bool Print_PEB();
-	void Dump_Decryption(ZydisMnemonic end_mnemonic, ZydisRegister enc_reg, const char* print_indexing);
+	void Dump_Decryption(uintptr_t decryption_end, ZydisRegister enc_reg, const char* print_indexing, ZydisMnemonic end_mnemonic = ZydisMnemonic::ZYDIS_MNEMONIC_INVALID);
 public:
 	Disassembler(Debugger* dbg);
 
