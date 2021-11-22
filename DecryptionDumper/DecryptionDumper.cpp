@@ -39,11 +39,14 @@ int main()
 
 		system("cls");
 		Disassembler dis = Disassembler(&debug);
-		if (selected_game == Game::ModernWarfare)
-			dis.Dump_ClientInfo_MW(debug.scanner->Find_Pattern("48 8B 04 C1 48 8B 1C 03 48 8B CB 48 8B 03 FF 90 98 00 00 00", true));
-		else if (selected_game == Game::Vanguard)
-			dis.Dump_ClientInfo_Vanguard(debug.scanner->Find_Pattern("FF 90 ?? ?? ?? ?? 84 C0 0F 84 ?? ?? ?? ?? 48 8B 1D ?? ?? ?? ?? C6 44 24 ?? ?? 0F B6 44 24", true));
-		dis.Dump_ClientBase(debug.scanner->Find_Pattern("48 8B 83 ?? ?? ?? ?? C6 44 24 ?? ?? 0F B6", true));
+		if (selected_game == Game::ModernWarfare) {
+			dis.Dump_Offsets_MW();
+			dis.Dump_ClientInfo_MW(debug.scanner->Find_Pattern("FF 90 ?? ?? ?? ?? 84 C0 0F 84 ?? ?? ?? ?? 48 8B 1D ?? ?? ?? ?? C6 44 24 ?? ?? 0F B6 44 24"));
+		}
+		else if (selected_game == Game::Vanguard) {
+			dis.Dump_ClientInfo_Vanguard(debug.scanner->Find_Pattern("FF 90 ?? ?? ?? ?? 84 C0 0F 84 ?? ?? ?? ?? 48 8B 1D ?? ?? ?? ?? C6 44 24 ?? ?? 0F B6 44 24"));
+		}
+		dis.Dump_ClientBase(debug.scanner->Find_Pattern("48 8B 83 ? ? ? ? C6 44 24 ? ? 0F B6 4C 24 ? 83 ? ? 0F B6 C9 65 48 8B ? 48"));
 		dis.Dump_BoneBase(debug.scanner->Find_Pattern("0F BF B4 ?? ?? ?? ?? ?? 89 ?? 24 ?? 85"));
 		dis.Dump_BoneIndex(debug.scanner->Find_Pattern("84 ?? 0F 84 ?? ?? ?? ?? 48 ?? ?? C8 13 00 00"));
 		std::getchar();

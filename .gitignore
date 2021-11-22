@@ -375,3 +375,4 @@ FodyWeavers.xsd
 *.nam
 *.til
 /DecryptionDumper/__Vanguard
+*.bin

@@ -71,60 +71,8 @@ void Debugger::SetRegisterValue(ZydisRegister reg, uintptr_t val)
 		reg = ZydisRegisterEncode(ZYDIS_REGCLASS_GPR64, regID); //makes it the full register. (eg rax instead or eax)
 	}
 
-	switch (reg)
-	{
-	case ZYDIS_REGISTER_RIP:
-		c.Rip = val;
-		break;
-	case ZYDIS_REGISTER_RAX:
-		c.Rax = val;
-		break;
-	case ZYDIS_REGISTER_RCX:
-		c.Rcx = val;
-		break;
-	case ZYDIS_REGISTER_RDX:
-		c.Rdx = val;
-		break;
-	case ZYDIS_REGISTER_RBX:
-		c.Rbx = val;
-		break;
-	case ZYDIS_REGISTER_RSP:
-		c.Rsp = val;
-		break;
-	case ZYDIS_REGISTER_RBP:
-		c.Rbp = val;
-		break;
-	case ZYDIS_REGISTER_RSI:
-		c.Rsi = val;
-		break;
-	case ZYDIS_REGISTER_RDI:
-		c.Rdi = val;
-		break;
-	case ZYDIS_REGISTER_R8:
-		c.R8 = val;
-		break;
-	case ZYDIS_REGISTER_R9:
-		c.R9 = val;
-		break;
-	case ZYDIS_REGISTER_R10:
-		c.R10 = val;
-		break;
-	case ZYDIS_REGISTER_R11:
-		c.R11 = val;
-		break;
-	case ZYDIS_REGISTER_R12:
-		c.R12 = val;
-		break;
-	case ZYDIS_REGISTER_R13:
-		c.R13 = val;
-		break;
-	case ZYDIS_REGISTER_R14:
-		c.R14 = val;
-		break;
-	case ZYDIS_REGISTER_R15:
-		c.R15 = val;
-		break;
-	}
+	uintptr_t offset = reg - ZydisRegister::ZYDIS_REGISTER_RAX;
+	*(&c.Rax + offset) = val; //big brain. Fuck having a huge switch :)
 
 	SetContext(&c);
 }
@@ -244,9 +192,7 @@ bool Debugger::OnExceptionEvent(const EXCEPTION_DEBUG_INFO* pInfo)
 	{
 	case EXCEPTION_BREAKPOINT:
 		printf("Breakpoint was hit!");
-		return true;
-		break;
-	case 0xC0000005:
+	case STATUS_ACCESS_VIOLATION:
 		exception_hit = true;
 	default:
 		debug_status = DebugStatus::interrupted;
@@ -255,11 +201,10 @@ bool Debugger::OnExceptionEvent(const EXCEPTION_DEBUG_INFO* pInfo)
 	}
 }
 
-
 bool Debugger::Init(std::string exe_path)
 {
 	Load_File(exe_path);
-	Sleep(5500);
+	Sleep(5000);
 	if (!DebugActiveProcess(process_id))
 	{
 		printf("Failed to attach to process. Error code: %#X", GetLastError());
@@ -304,15 +249,15 @@ void Debugger::Dump_Process()
 			}
 		}
 
-		const auto dump_file = CreateFileW(L"cod.bin", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_COMPRESSED, NULL);
+		const auto dump_file = CreateFileW(L"cod_vanguard.bin", GENERIC_WRITE, 0, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_COMPRESSED, NULL);
 		if (dump_file != INVALID_HANDLE_VALUE) {
 			if (!WriteFile(dump_file, target.get(), static_cast<DWORD>(target_len), NULL, NULL)) {
-				printf("cod(%u) Error writing cod.bin: %u\n", process_id, GetLastError());
+				printf("cod(%u) Error writing cod_vanguard.bin: %u\n", process_id, GetLastError());
 			}
 			CloseHandle(dump_file);
 		}
 		else {
-			printf("cod(%u) Error writing cod.bin: %u\n", process_id, GetLastError());
+			printf("cod(%u) Error writing cod_vanguard.bin: %u\n", process_id, GetLastError());
 		}
 		printf("cod(%u) Wrote cod.bin!\n", process_id);
 	}
