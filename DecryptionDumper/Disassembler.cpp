@@ -722,6 +722,14 @@ void Disassembler::Dump_ClientBase(uintptr_t address)
 	current_rip = address;
 
 	printf("uintptr_t decrypt_client_base(uintptr_t client_info)\n{\n");
+	printf("\tuint64_t rax = baseModuleAddr, rbx = baseModuleAddr, rcx = baseModuleAddr, rdx = baseModuleAddr, rdi = baseModuleAddr, rsi = baseModuleAddr, r8 = baseModuleAddr, r9 = baseModuleAddr, r10 = baseModuleAddr, r11 = baseModuleAddr, r12 = baseModuleAddr, r13 = baseModuleAddr, r14 = baseModuleAddr, r15 = baseModuleAddr;\n");
+
+	ZydisDecodedInstruction encrypted_read_instruction = Decode(current_rip);
+	ignore_trace.push_back(encrypted_read_instruction.operands[0].reg.value);
+	std::string enc_client_info = AsmToCPP(encrypted_read_instruction, current_rip);
+	printf("\t%s;\n", std::regex_replace(enc_client_info, std::regex(Get64BitRegisterString(encrypted_read_instruction.operands[1].mem.base)), "client_info").c_str());
+	printf("\tif(!%s)\n\t\treturn %s;\n", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str(), Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
+
 	Dump_Switch();
 	ignore_trace.clear();
 }
@@ -738,6 +746,13 @@ void Disassembler::Dump_BoneBase(uintptr_t address)
 	SkipOverUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
 
 	printf("uintptr_t decrypt_bone_base(uintptr_t client_info)\n{\n");
+	printf("\tuint64_t rax = baseModuleAddr, rbx = baseModuleAddr, rcx = baseModuleAddr, rdx = baseModuleAddr, rdi = baseModuleAddr, rsi = baseModuleAddr, r8 = baseModuleAddr, r9 = baseModuleAddr, r10 = baseModuleAddr, r11 = baseModuleAddr, r12 = baseModuleAddr, r13 = baseModuleAddr, r14 = baseModuleAddr, r15 = baseModuleAddr;\n");
+
+	ZydisDecodedInstruction encrypted_read_instruction = Decode(current_rip);
+	ignore_trace.push_back(encrypted_read_instruction.operands[0].reg.value);
+	printf("\t%s;\n", AsmToCPP(encrypted_read_instruction, current_rip).c_str());
+	printf("\tif(!%s)\n\t\treturn %s;\n", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str(), Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
+
 	Dump_Switch();
 	ignore_trace.clear();
 }
