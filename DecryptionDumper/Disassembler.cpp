@@ -609,7 +609,6 @@ void Disassembler::Dump_Decryption(uintptr_t decryption_end, ZydisRegister enc_r
 
 void Disassembler::Dump_Switch()
 {
-	printf("uintptr_t decrypt_client_base(uintptr_t client_info)\n{\n");
 	printf("\tuint64_t rax = baseModuleAddr, rbx = baseModuleAddr, rcx = baseModuleAddr, rdx = baseModuleAddr, rdi = baseModuleAddr, rsi = baseModuleAddr, r8 = baseModuleAddr, r9 = baseModuleAddr, r10 = baseModuleAddr, r11 = baseModuleAddr, r12 = baseModuleAddr, r13 = baseModuleAddr, r14 = baseModuleAddr, r15 = baseModuleAddr;\n");
 
 	ZydisDecodedInstruction encrypted_read_instruction = Decode(current_rip);
@@ -722,6 +721,7 @@ void Disassembler::Dump_ClientBase(uintptr_t address)
 
 	current_rip = address;
 
+	printf("uintptr_t decrypt_client_base(uintptr_t client_info)\n{\n");
 	Dump_Switch();
 	ignore_trace.clear();
 }
@@ -737,6 +737,7 @@ void Disassembler::Dump_BoneBase(uintptr_t address)
 	current_rip = address;
 	SkipOverUntilInstruction(ZydisMnemonic::ZYDIS_MNEMONIC_JZ);
 
+	printf("uintptr_t decrypt_bone_base(uintptr_t client_info)\n{\n");
 	Dump_Switch();
 	ignore_trace.clear();
 }
