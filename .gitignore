@@ -376,3 +376,4 @@ FodyWeavers.xsd
 *.til
 /DecryptionDumper/__Vanguard
 *.bin
+*.exe

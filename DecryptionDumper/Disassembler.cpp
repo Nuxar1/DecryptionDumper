@@ -241,7 +241,7 @@ std::string Disassembler::AsmToCPP(ZydisDecodedInstruction instruction, uintptr_
 				ss << Get64BitRegisterString(r1) << " -= 0x" << std::hex << std::uppercase << instruction.operands[1].imm.value.u;
 		}
 		else if (stack_trace_name) {
-			ss << Get64BitRegisterString(r1) << " = " << stack_trace_name;
+			ss << Get64BitRegisterString(r1) << " -= " << stack_trace_name;
 		}
 		else
 			ss << GetInstructionText(instruction);
@@ -261,7 +261,7 @@ std::string Disassembler::AsmToCPP(ZydisDecodedInstruction instruction, uintptr_
 				ss << Get64BitRegisterString(r1) << " += 0x" << std::hex << std::uppercase << instruction.operands[1].imm.value.u;
 		}
 		else if (stack_trace_name) {
-			ss << Get64BitRegisterString(r1) << " = " << stack_trace_name;
+			ss << Get64BitRegisterString(r1) << " += " << stack_trace_name;
 		}
 		else
 			ss << GetInstructionText(instruction);
@@ -298,7 +298,7 @@ std::string Disassembler::AsmToCPP(ZydisDecodedInstruction instruction, uintptr_
 			ss << Get64BitRegisterString(r1) << " ^= " << "read<uintptr_t>(baseModuleAddr + 0x" << std::hex << std::uppercase << (rip + instruction.operands[1].mem.disp.value + instruction.length) - debugger->base_address << ")";
 		}
 		else if (stack_trace_name) {
-			ss << Get64BitRegisterString(r1) << " = " << stack_trace_name;
+			ss << Get64BitRegisterString(r1) << " ^= " << stack_trace_name;
 		}
 		else
 		{
@@ -316,9 +316,6 @@ std::string Disassembler::AsmToCPP(ZydisDecodedInstruction instruction, uintptr_
 		if (instruction.operand_count == 4)
 		{
 			ss << Get64BitRegisterString(r2) << std::uppercase << " = _umul128(" << Get64BitRegisterString(r2) << ", " << Get64BitRegisterString(r1) << ", (uintptr_t*)&" << Get64BitRegisterString(r3) << ")";
-		}
-		else if (stack_trace_name) {
-			ss << Get64BitRegisterString(r1) << " = " << stack_trace_name;
 		}
 		else
 			ss << GetInstructionText(instruction);
@@ -349,7 +346,7 @@ std::string Disassembler::AsmToCPP(ZydisDecodedInstruction instruction, uintptr_
 			ss << Get64BitRegisterString(r1) << " = " << Get64BitRegisterString(r2) << " * 0x" << std::hex << std::uppercase << instruction.operands[2].imm.value.s;
 		}
 		else if (stack_trace_name) {
-			ss << Get64BitRegisterString(r1) << " = " << stack_trace_name;
+			ss << Get64BitRegisterString(r1) << " *= " << stack_trace_name;
 		}
 		else
 		{
@@ -471,7 +468,7 @@ void Disassembler::Print_Decryption(std::vector<InstructionTrace>& instruction_t
 						printf("%s%s; \t\t//%s\n", print_indexing, cpp_code.c_str(), DisassembledString.c_str());
 				}
 				catch (const std::exception&) { // didn't find stack trace. use base;
-					printf("%s%s = baseModuleAddr; \t\t//%s -- didn't find trace -> use base\n", print_indexing, Get64BitRegisterString(instruction_trace[j].instruction.operands[0].reg.value).c_str(), DisassembledString.c_str());
+					printf("\033[1;31m%s%s = baseModuleAddr; \t\t//%s -- didn't find trace -> use base\033[0m\n", print_indexing, Get64BitRegisterString(instruction_trace[j].instruction.operands[0].reg.value).c_str(), DisassembledString.c_str());
 					continue;
 				}
 			}
@@ -479,9 +476,9 @@ void Disassembler::Print_Decryption(std::vector<InstructionTrace>& instruction_t
 				try {
 					auto stack_trace = instruction_trace[instruction_trace[j].rbp_stack_map.at(instruction_trace[j].instruction.operands[1].mem.disp.value)];
 					auto stack_instruction = stack_trace.instruction;
-
+					
 					char tmp_var[100];
-					sprintf_s(tmp_var + strlen(tmp_var), 100 - strlen(tmp_var), "RBP_0x%llX", instruction_trace[j].instruction.operands[1].mem.disp.value);
+					sprintf_s(tmp_var, 100, "RSP_0x%llX", instruction_trace[j].instruction.operands[1].mem.disp.value);
 					printf("%suintptr_t %s;\n", print_indexing, tmp_var);
 
 					std::string trace_code = AsmToCPP(stack_instruction, stack_trace.rip);
@@ -497,7 +494,7 @@ void Disassembler::Print_Decryption(std::vector<InstructionTrace>& instruction_t
 						printf("%s%s; \t\t//%s\n", print_indexing, cpp_code.c_str(), DisassembledString.c_str());
 				}
 				catch (const std::exception&) { // didn't find stack trace. use base;
-					printf("%s%s = baseModuleAddr; \t\t//%s -- didn't find trace -> use base\n", print_indexing, Get64BitRegisterString(instruction_trace[j].instruction.operands[0].reg.value).c_str(), DisassembledString.c_str());
+					printf("\033[1;31m%s%s; \t\t//%s -- didn't find trace -> use base\033[0m\n", print_indexing, AsmToCPP(instruction_trace[j].instruction, instruction_trace[j].rip, "baseModuleAddr").c_str(), DisassembledString.c_str());
 					continue;
 				}
 			}
@@ -830,7 +827,7 @@ void Disassembler::Dump_Offsets_MW()
 		if (instruction.operands[0].mem.disp.has_displacement)
 			printf("\tconstexpr auto local_index = 0x%llX;\n", instruction.operands[0].mem.disp.value);
 		else
-			printf("\033[1;31mconstexpr auto local_index = 0x0;\033[0m\n");
+			printf("\t\033[1;31mconstexpr auto local_index = 0x0;\033[0m\n");
 		printf("\tconstexpr auto local_index_pos = 0x1FC;\n");
 	}
 
@@ -970,7 +967,7 @@ void Disassembler::Dump_Offsets_MW()
 				printf("\t\tconstexpr auto bone_base = 0x%llX;\n", instruction.operands[1].mem.disp.value);
 			else
 				printf("\t\t\033[1;31mconstexpr auto bone_base = 0x0;\033[0m\n");
-			printf("\tconstexpr auto size = 0x150;\n");
+			printf("\t\tconstexpr auto size = 0x150;\n");
 		}
 	}
 	printf("\t}\n");
