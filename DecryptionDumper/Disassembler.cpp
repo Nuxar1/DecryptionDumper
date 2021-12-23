@@ -468,7 +468,7 @@ void Disassembler::Print_Decryption(std::vector<InstructionTrace>& instruction_t
 						printf("%s%s; \t\t//%s\n", print_indexing, cpp_code.c_str(), DisassembledString.c_str());
 				}
 				catch (const std::exception&) { // didn't find stack trace. use base;
-					printf("\033[1;31m%s%s = baseModuleAddr; \t\t//%s -- didn't find trace -> use base\033[0m\n", print_indexing, Get64BitRegisterString(instruction_trace[j].instruction.operands[0].reg.value).c_str(), DisassembledString.c_str());
+					printf("\033[1;31m%s%s; \t\t//%s -- didn't find trace -> use base\033[0m\n", print_indexing, AsmToCPP(instruction_trace[j].instruction, instruction_trace[j].rip, "baseModuleAddr").c_str(), DisassembledString.c_str());
 					continue;
 				}
 			}
