@@ -9,3 +9,5 @@ Summary of how it works:
   3. In the end it goes through all needed instruction and prints them. If the stack is referenced, it looks at where instruction that stack location is set and gets the instruction that sets it. Then a local variable gets created which then gets assigned to the value of the stack location. (you can just make it 1 line, but I had planned on making it possible to trace stack values that required multiple instructions)
 
 It also supports dumping decryption for Vanguard, but I didn't bother adding offsets for that game.
+
+Released on: https://www.unknowncheats.me/forum/call-of-duty-modern-warfare/478869-decryption-offset-dumper.html
