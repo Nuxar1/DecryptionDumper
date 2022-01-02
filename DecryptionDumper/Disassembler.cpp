@@ -293,12 +293,12 @@ std::string Disassembler::AsmToCPP(ZydisDecodedInstruction instruction, uintptr_
 
 		break;
 	case ZYDIS_MNEMONIC_XOR:
-		if (instruction.operands[1].mem.disp.value != 0)
+		if (stack_trace_name) {
+			ss << Get64BitRegisterString(r1) << " ^= " << stack_trace_name;
+		}
+		else if (instruction.operands[1].mem.disp.value != 0)
 		{
 			ss << Get64BitRegisterString(r1) << " ^= " << "read<uintptr_t>(baseModuleAddr + 0x" << std::hex << std::uppercase << (rip + instruction.operands[1].mem.disp.value + instruction.length) - debugger->base_address << ")";
-		}
-		else if (stack_trace_name) {
-			ss << Get64BitRegisterString(r1) << " ^= " << stack_trace_name;
 		}
 		else
 		{
@@ -476,7 +476,7 @@ void Disassembler::Print_Decryption(std::vector<InstructionTrace>& instruction_t
 				try {
 					auto stack_trace = instruction_trace[instruction_trace[j].rbp_stack_map.at(instruction_trace[j].instruction.operands[1].mem.disp.value)];
 					auto stack_instruction = stack_trace.instruction;
-					
+
 					char tmp_var[100];
 					sprintf_s(tmp_var, 100, "RSP_0x%llX", instruction_trace[j].instruction.operands[1].mem.disp.value);
 					printf("%suintptr_t %s;\n", print_indexing, tmp_var);
