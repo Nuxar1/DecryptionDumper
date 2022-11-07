@@ -49,6 +49,7 @@ private:
 	void Dump_Decryption(uintptr_t decryption_end, ZydisRegister enc_reg, const char* print_indexing, ZydisMnemonic end_mnemonic = ZydisMnemonic::ZYDIS_MNEMONIC_INVALID);
 
 	void Dump_Switch();
+	void PrintRegisters();
 public:
 	Disassembler(Debugger* dbg);
 
