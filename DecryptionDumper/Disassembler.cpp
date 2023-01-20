@@ -901,9 +901,9 @@ void Disassembler::Dump_Offsets_MW()
 	printf("\tclass bone {\n\tpublic:\n");
 	{
 		{
-			uintptr_t addr = debugger->scanner->Find_Pattern("C4 C1 7A 58 88 ? ? ? ? C5 FA 11 8A ? ? ? ? C5 FA 10 51 ? C4 C1 6A 58 80 ? ? ? ? C5 FA 11 82 ? ? ? ? C5 FA 10 49 ? C4 C1 72 58 90");
+			uintptr_t addr = debugger->scanner->Find_Pattern("C5 FA 58 8A ? ? ? ? C4 C1 7A 11 88 ? ? ? ? C5 FA 10 51 ? C5 EA 58 82 ? ? ? ? C4 C1 7A 11 80");
 			auto instruction = Decode(addr);
-			if (instruction.operands[2].mem.base == ZYDIS_REGISTER_R8 && instruction.operands[2].mem.disp.has_displacement)
+			if (instruction.operands[2].mem.base == ZYDIS_REGISTER_RDX && instruction.operands[2].mem.disp.has_displacement)
 				printf("\t\tstatic constexpr auto bone_base = 0x%llX;\n", instruction.operands[2].mem.disp.value);
 			else
 				printf("\t\t\033[1;31mstatic constexpr auto bone_base = 0x0;\033[0m\n");
@@ -954,11 +954,10 @@ void Disassembler::Dump_Offsets_MW()
 		}
 
 		{
-			uintptr_t addr = debugger->scanner->Find_Pattern("0F 48 F0 83 BF ? ? ? ? ? 75 0A F3 0F 10 35 ? ? ? ? EB 08");
+			uintptr_t addr = debugger->scanner->Find_Pattern("41 8B A8 ? ? ? ? 48 8B CE 4D 8B F8 4C 8B F2 33 DB E8");
 			auto instruction = Decode(addr);
-			instruction = Decode(addr + instruction.length);
-			if (instruction.operands[0].mem.base == ZYDIS_REGISTER_RDI && instruction.operands[0].mem.disp.has_displacement)
-				printf("\t\tstatic constexpr auto stance = 0x%llX;\n", instruction.operands[0].mem.disp.value);
+			if (instruction.operands[1].mem.base == ZYDIS_REGISTER_R8 && instruction.operands[1].mem.disp.has_displacement)
+				printf("\t\tstatic constexpr auto stance = 0x%llX;\n", instruction.operands[1].mem.disp.value);
 			else
 				printf("\t\t\033[1;31mstatic constexpr auto stance = 0x0;\033[0m\n");
 		}
