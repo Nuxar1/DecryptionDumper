@@ -51,7 +51,7 @@ int main()
 		case ModernWarfare2:
 			dis.Dump_Offsets_MW();
 			dis.Dump_ClientInfo_MW(debug.scanner->Find_Pattern("48 8B 4C 24 ? BA ? ? ? ? 0F B7 81 ? ? ? ? 66 83 E8 13 66 85 C2")); // OG , FF 90 ?? ?? ?? ?? 84 C0 0F 84 ?? ?? ?? ?? 48 8B 1D ?? ?? ?? ?? C6 44 24 ?? ?? 0F B6 44 24
-			dis.Dump_ClientBase(debug.scanner->Find_Pattern("48 8B 93 ? ? ? ? 90 C6 45 B7 18 0F B6 45 B7 C0 C8 2E 0F B6 C0 65 4C 8B 18"));
+			dis.Dump_ClientBase(debug.scanner->Find_Pattern("48 8B 93 ? ? ? ? 90 C6 45"));
 			break;
 		case Vanguard:
 			dis.Dump_ClientInfo_Vanguard(debug.scanner->Find_Pattern("48 8B 83 ?? ?? ?? ?? C6 44 24 ?? ?? 0F B6 4C 24 ?? C0"));
