@@ -829,7 +829,7 @@ void Disassembler::Dump_Offsets_MW()
 			printf("\tstatic constexpr auto camera_base = 0x%llX;\n", (addr + instruction.operands[1].mem.disp.value + instruction.length) - debugger->base_address);
 		else
 			printf("\t\033[1;31mstatic constexpr auto camera_base = 0x0;\033[0m\n");
-		printf("\tstatic constexpr auto camera_pos = 0x1D8;\n");
+		printf("\tstatic constexpr auto camera_pos = 0x1F8;\n");
 	}
 
 	{
@@ -839,7 +839,7 @@ void Disassembler::Dump_Offsets_MW()
 			printf("\tstatic constexpr auto local_index = 0x%llX;\n", instruction.operands[1].mem.disp.value);
 		else
 			printf("\t\033[1;31mstatic constexpr auto local_index = 0x0;\033[0m\n");
-		printf("\tstatic constexpr auto local_index_pos = 0x2CC; // 0x1FC for MW1 (2019)\n");
+		printf("\tstatic constexpr auto local_index_pos = 0x2D0; // 0x1FC for MW1 (2019)\n");
 	}
 
 	{
