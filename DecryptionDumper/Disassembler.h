@@ -29,6 +29,9 @@ private:
 
 	uintptr_t current_rip;
 	Debugger* debugger;
+
+	uintptr_t client_base_end;
+	uintptr_t bone_base_end;
 private:
 	ZydisRegister To64BitRegister(ZydisRegister reg) const;
 	std::string Get64BitRegisterString(ZydisRegister reg) const;
@@ -48,7 +51,7 @@ private:
 	void Load_DecryptionTrace(std::vector<InstructionTrace>& instruction_trace, uintptr_t decryption_end, ZydisMnemonic end_mnemonic);
 	void Dump_Decryption(uintptr_t decryption_end, ZydisRegister enc_reg, const char* print_indexing, ZydisMnemonic end_mnemonic = ZydisMnemonic::ZYDIS_MNEMONIC_INVALID);
 
-	void Dump_Switch();
+	uintptr_t Dump_Switch();
 	void PrintRegisters();
 public:
 	Disassembler(Debugger* dbg);

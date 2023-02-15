@@ -606,7 +606,7 @@ void Disassembler::Dump_Decryption(uintptr_t decryption_end, ZydisRegister enc_r
 	Print_Decryption(instruction_trace, enc_reg, print_indexing);
 }
 
-void Disassembler::Dump_Switch()
+uintptr_t Disassembler::Dump_Switch()
 {
 	ZydisDecodedInstruction encrypted_read_instruction = Decode(current_rip);
 
@@ -640,6 +640,7 @@ void Disassembler::Dump_Switch()
 		printf("\t\treturn %s;\n\t}\n", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
 	}
 	printf("\t}\n}\n");
+	return decryption_end;
 }
 
 void Disassembler::PrintRegisters()
@@ -730,7 +731,7 @@ void Disassembler::Dump_ClientBase(uintptr_t address)
 	printf("\t%s;\n", std::regex_replace(enc_client_info, std::regex(Get64BitRegisterString(encrypted_read_instruction.operands[1].mem.base)), "client_info").c_str());
 	printf("\tif(!%s)\n\t\treturn %s;\n", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str(), Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
 
-	Dump_Switch();
+	client_base_end = Dump_Switch();
 	ignore_trace.clear();
 }
 
@@ -753,7 +754,7 @@ void Disassembler::Dump_BoneBase(uintptr_t address)
 	printf("\t%s;\n", AsmToCPP(encrypted_read_instruction, current_rip).c_str());
 	printf("\tif(!%s)\n\t\treturn %s;\n", Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str(), Get64BitRegisterString(encrypted_read_instruction.operands[0].reg.value).c_str());
 
-	Dump_Switch();
+	bone_base_end = Dump_Switch();
 	ignore_trace.clear();
 }
 
@@ -854,7 +855,7 @@ void Disassembler::Dump_Offsets_MW()
 	{
 		uintptr_t addr = debugger->scanner->Find_Pattern("3B 0D ?? ?? ?? ?? 0F 47 0D ?? ?? ?? ?? 41 89 4D 24"); //3B 1D ? ? ? ? 89 5D 88 89 9D ? ? ? ? 0F 8D ? ? ? ? 48 8B 3D
 		auto instruction = Decode(addr);
-		if (instruction.operands[0].reg.value == ZYDIS_REGISTER_ECX &&instruction.operands[1].mem.base == ZYDIS_REGISTER_RIP && instruction.operands[1].mem.disp.has_displacement)
+		if (instruction.operands[0].reg.value == ZYDIS_REGISTER_ECX && instruction.operands[1].mem.base == ZYDIS_REGISTER_RIP && instruction.operands[1].mem.disp.has_displacement)
 			printf("\tstatic constexpr auto game_mode = 0x%llX;\n", (addr + instruction.operands[1].mem.disp.value + instruction.length) - debugger->base_address);
 		else
 			printf("\t\033[1;31mstatic constexpr auto game_mode = 0x0;\033[0m\n");
@@ -863,7 +864,7 @@ void Disassembler::Dump_Offsets_MW()
 	{
 		uintptr_t addr = debugger->scanner->Find_Pattern("48 8D 1D ?? ?? ?? ?? B2 01 8B 00 0F B7 C8 48 8B 1C CB");
 		auto instruction = Decode(addr);
-		if (instruction.operands[0].reg.value == ZYDIS_REGISTER_RBX &&instruction.operands[1].mem.base == ZYDIS_REGISTER_RIP && instruction.operands[1].mem.disp.has_displacement)
+		if (instruction.operands[0].reg.value == ZYDIS_REGISTER_RBX && instruction.operands[1].mem.base == ZYDIS_REGISTER_RIP && instruction.operands[1].mem.disp.has_displacement)
 			printf("\tstatic constexpr auto weapon_definitions = 0x%llX;\n", (addr + instruction.operands[1].mem.disp.value + instruction.length) - debugger->base_address);
 		else
 			printf("\t\033[1;31mstatic constexpr auto weapon_definitions = 0x0;\033[0m\n");
@@ -907,9 +908,24 @@ void Disassembler::Dump_Offsets_MW()
 				printf("\t\tstatic constexpr auto bone_base = 0x%llX;\n", instruction.operands[2].mem.disp.value);
 			else
 				printf("\t\t\033[1;31mstatic constexpr auto bone_base = 0x0;\033[0m\n");
-			printf("\t\tstatic constexpr auto size = 0x180; //0x150 for MW1(2019).\n");
-			printf("\t\tstatic constexpr auto offset = 0xD8; //0xC0 for MW1(2019).\n");
+
 		}
+		{
+			auto instruction = Decode(bone_base_end);
+			uintptr_t mult_start = bone_base_end + instruction.length;
+			instruction = Decode(mult_start);
+			if(instruction.mnemonic == ZYDIS_MNEMONIC_IMUL)
+				printf("\t\tstatic constexpr auto size = 0x%llX;\n", instruction.operands[2].imm.value);
+			else {
+				current_rip = mult_start;
+				SkipUntilInstruction(ZYDIS_MNEMONIC_ADD);
+				auto end_instruction = Decode(current_rip);
+				uintptr_t mult_end = current_rip + end_instruction.length;
+				GoToAddress(mult_start);
+				Dump_Decryption(mult_end, end_instruction.operands[0].reg.value, "\t\t");
+			}
+		}
+		printf("\t\tstatic constexpr auto offset = 0xD8; //0xC0 for MW1(2019).\n");
 	}
 	printf("\t};\n");
 
@@ -918,12 +934,19 @@ void Disassembler::Dump_Offsets_MW()
 	printf("\tclass player {\n\tpublic:\n");
 	{
 		{
-			uintptr_t addr = debugger->scanner->Find_Pattern("49 63 C7 48 69 D8 ? ? ? ? 48 03 DA ") + 3;
-			auto instruction = Decode(addr);
-			if (instruction.operands[2].type == ZydisOperandType::ZYDIS_OPERAND_TYPE_IMMEDIATE)
+			auto instruction = Decode(client_base_end);
+			uintptr_t mult_start = client_base_end + instruction.length;
+			instruction = Decode(mult_start);
+			if (instruction.mnemonic == ZYDIS_MNEMONIC_IMUL)
 				printf("\t\tstatic constexpr auto size = 0x%llX;\n", instruction.operands[2].imm.value);
-			else
-				printf("\t\t\033[1;31mstatic constexpr auto size = 0x0;\033[0m\n");
+			else {
+				current_rip = mult_start;
+				SkipUntilInstruction(ZYDIS_MNEMONIC_ADD);
+				auto end_instruction = Decode(current_rip);
+				uintptr_t mult_end = current_rip + end_instruction.length;
+				GoToAddress(mult_start);
+				Dump_Decryption(mult_end, end_instruction.operands[0].reg.value, "\t\t");
+			}
 		}
 
 		{
