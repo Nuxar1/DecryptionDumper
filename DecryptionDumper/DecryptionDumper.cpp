@@ -9,7 +9,8 @@ enum Game
 	none,
 	ModernWarfare,
 	Vanguard,
-	ModernWarfare2,
+	ModernWarfare2steam,
+	ModernWarfare2bnet,
 };
 
 int main()
@@ -19,7 +20,11 @@ int main()
 
 	while (true)
 	{
-		printf("Select game: \n\t1: Modern Warfare\n\t2: Vanguard\n\t3: Modern Warfare 2\n");
+		printf("Select game: \n"
+			"\t1: Modern Warfare\n"
+			"\t2: Vanguard\n"
+			"\t3: Modern Warfare 2 (steam)\n"
+			"\t4: Modern Warfare 2 (bnet)\n");
 		selected_game = (Game)((int)_getch() - '0');
 		switch (selected_game)
 		{
@@ -31,9 +36,13 @@ int main()
 			printf("Dumping Modern Vanguard.\n");
 			debug.Init("C:\\Program Files (x86)\\Call of Duty Vanguard\\Vanguard.exe");
 			break;
-		case ModernWarfare2:
-			printf("Dumping Modern Warfare 2.\n");
+		case ModernWarfare2steam:
+			printf("Dumping Modern Warfare 2 (steam).\n");
 			debug.Init("C:\\Program Files (x86)\\Steam\\steamapps\\\common\\Call of Duty HQ\\cod.exe");
+			break;
+		case ModernWarfare2bnet:
+			printf("Dumping Modern Warfare 2 (bnet).\n");
+			debug.Init("C:\\Program Files (x86)\\Call of Duty\\_retail_\\cod.exe");
 			break;
 		default:
 			system("cls");
@@ -48,7 +57,8 @@ int main()
 		Disassembler dis = Disassembler(&debug);
 		switch (selected_game) {
 		case ModernWarfare:
-		case ModernWarfare2:
+		case ModernWarfare2steam:
+		case ModernWarfare2bnet:
 			dis.Dump_ClientInfo_MW(debug.scanner->Find_Pattern("48 8B 4C 24 ? BA ? ? ? ? 0F B7"));
 			dis.Dump_ClientBase(debug.scanner->Find_Pattern("4C 8B 83 ? ? ? ? 90 C6 44 24 ? ? 0F B6 44 24"));
 			break;
@@ -60,7 +70,7 @@ int main()
 		dis.Dump_BoneBase(debug.scanner->Find_Pattern("0F BF B4 ?? ?? ?? ?? ?? 89 ?? 24 ?? 85"));
 		dis.Dump_BoneIndex(debug.scanner->Find_Pattern("84 ?? 0F 84 ?? ?? ?? ?? 48 ?? ?? C8 13 00 00"));
 
-		if (selected_game == Game::ModernWarfare || selected_game == Game::ModernWarfare2)
+		if (selected_game != Game::Vanguard)
 			dis.Dump_Offsets_MW();
 		std::getchar();
 	}
